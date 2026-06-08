@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useChildStore } from "@/store/useChildStore";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
+import { DarkModeToggle } from "@/components/theme/DarkModeToggle";
 
 const menuItems = [
   { href: "/", label: "Tổng quan", icon: Home },
@@ -108,7 +109,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // ---- Sidebar ---------------------------------------------------------
 
-  const SidebarContent = () => (
+  // NOTE: this is a plain JSX-returning helper, NOT a React component, so it
+  // does not get a new identity on each render. (Defining a component inside
+  // another component causes remounts + state loss + the "Cannot create
+  // components during render" lint error.)
+  const renderSidebar = () => (
     <div className="flex flex-col h-full bg-slate-950 text-slate-200 border-r border-slate-900 w-64">
       <div className="flex items-center gap-3 px-6 h-20 border-b border-slate-900">
         <div className="p-2 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/20">
@@ -200,7 +205,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen flex bg-slate-950">
       <aside className="hidden md:flex flex-col sticky top-0 h-screen">
-        <SidebarContent />
+        {renderSidebar()}
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -220,7 +225,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 }
               />
               <SheetContent side="left" className="p-0 border-r-0 w-64 bg-slate-950">
-                <SidebarContent />
+                {renderSidebar()}
               </SheetContent>
             </Sheet>
 
@@ -307,6 +312,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
+            <DarkModeToggle />
             <NotificationBell />
           </div>
         </header>

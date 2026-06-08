@@ -12,7 +12,7 @@ You need accounts + credentials for:
 |---|---|---|
 | **Vercel** | Account + CLI installed | https://vercel.com |
 | **Supabase** | New project + URL + anon key + service-role key | https://supabase.com |
-| **Anthropic** | Production API key | https://console.anthropic.com |
+| **Google AI** | Gemini production API key | https://aistudio.google.com/app/apikey |
 | **MoMo** (optional, prod) | Production partner code + secret | https://developers.momo.vn |
 | **VNPAY** (optional, prod) | Production TMN code + secret | https://sandbox.vnpayment.vn → graduate to production |
 | **Upstash** (optional) | Redis REST URL + token for rate limits | https://upstash.com |
@@ -102,8 +102,9 @@ Mark every key without the `NEXT_PUBLIC_` prefix as **server-side only**.
 | `NEXT_PUBLIC_SUPABASE_URL` | ✓ | Supabase → API → Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✓ | Supabase → API → anon public |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✓ | Supabase → API → service_role (KEEP SECRET) |
-| `ANTHROPIC_API_KEY` | ✓ | Anthropic console |
-| `ANTHROPIC_COACH_MODEL` | optional | `claude-sonnet-4-5` (default) |
+| `GOOGLE_AI_API_KEY` | ✓ | https://aistudio.google.com/app/apikey |
+| `GEMINI_PRO_MODEL` | optional | `gemini-2.5-pro` (default) — analyze + quiz-generate |
+| `GEMINI_FLASH_MODEL` | optional | `gemini-2.0-flash` (default) — coach streaming |
 | `GOOGLE_CLOUD_API_KEY` | optional | For OCR via `/api/pdf/ocr` |
 | `GOOGLE_CLOUD_PROJECT_ID` | optional | Same |
 | `MOMO_PARTNER_CODE` | ✓ for payments | MoMo merchant portal |
@@ -151,7 +152,7 @@ Run this checklist on the live URL before announcing:
 - [ ] **Auth — Google** — sign in via Google → callback redirects to `/`.
 - [ ] **Onboarding** — add a child profile via `/settings` → name + grade saved.
 - [ ] **Score input** — `/input`: try entering `15` → red border + validation; enter `7.5` → green border; submit → toast + dashboard auto-refreshes.
-- [ ] **AI analyze** — after scores saved, dashboard KPIs populate (or fall back to mock-data analysis with the "Đang dùng dữ liệu mẫu" notice if `ANTHROPIC_API_KEY` is missing).
+- [ ] **AI analyze** — after scores saved, dashboard KPIs populate (or fall back to mock-data analysis with the "Đang dùng dữ liệu mẫu" notice if `GOOGLE_AI_API_KEY` is missing).
 - [ ] **Quiz generate** — `/quiz/create`: paste 200+ chars text → step through wizard → generate → quiz row appears in `/quiz`.
 - [ ] **PDF upload** — upload a real PDF (≤10 MB) at `/quiz/create` step 1 → text extracted → if extracted text < 100 chars, see "PDF là ảnh scan" message.
 - [ ] **Quiz play** — open generated quiz → answer using keys `1`/`2`/`3`/`4` + `Enter` → submit → score appears. Close tab mid-quiz then reopen → draft restored from `localStorage`.

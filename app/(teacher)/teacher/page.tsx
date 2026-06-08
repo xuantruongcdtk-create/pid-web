@@ -193,7 +193,7 @@ export default function TeacherDashboardPage() {
             Quiz của bạn
           </CardTitle>
           <CardDescription className="text-slate-500">
-            Bấm "Chia sẻ" để lấy link công khai gửi cho phụ huynh
+            Bấm &ldquo;Chia sẻ&rdquo; để lấy link công khai gửi cho phụ huynh
           </CardDescription>
         </CardHeader>
         <CardContent>

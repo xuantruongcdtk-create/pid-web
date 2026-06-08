@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AI_NOT_CONFIGURED_MESSAGE, hasAnthropicKey, mockDnaUpdate } from "@/lib/ai/mock";
+import { AI_NOT_CONFIGURED_MESSAGE, hasGeminiKey, mockDnaUpdate } from "@/lib/ai/mock";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     // DNA update is a derivative of analyze; the real flow runs through
     // /api/ai/analyze and the dnaUpdate field. This endpoint just returns
     // a mock when AI isn't configured, or directs the caller to /analyze.
-    if (!hasAnthropicKey()) {
+    if (!hasGeminiKey()) {
       return NextResponse.json({
         success: true,
         aiConfigured: false,

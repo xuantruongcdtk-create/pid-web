@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { startOfWeek, formatISO, subDays } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
-import { anthropic } from "@/lib/ai/anthropic";
+import { generateContent, GEMINI_PRO_MODEL } from "@/lib/ai/gemini";
 import { ANALYZE_SYSTEM_PROMPT, buildAnalyzeUserPrompt } from "@/lib/ai/prompts/analyze";
-import { AI_NOT_CONFIGURED_MESSAGE, hasAnthropicKey, mockAnalysis } from "@/lib/ai/mock";
+import { AI_NOT_CONFIGURED_MESSAGE, hasGeminiKey, mockAnalysis } from "@/lib/ai/mock";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -130,8 +130,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // --- Mock fallback when AI key isn't configured
-    if (!hasAnthropicKey()) {
+    // --- Mock fallback when Gemini key isn't configured
+    if (!hasGeminiKey()) {
       const analysis = mockAnalysis(child.full_name);
       // Still cache + emit alerts so the UI experiences the full flow.
       const avgScore =
@@ -173,16 +173,13 @@ export async function POST(request: Request) {
       previousDnaProfile: (child.dna_profile as Record<string, number> | null) ?? null,
     });
 
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 1600,
+    const rawText = await generateContent(userPrompt, {
+      model: GEMINI_PRO_MODEL,
       system: ANALYZE_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
+      maxOutputTokens: 1600,
+      jsonMode: true,
     });
-
-    const textBlock = response.content.find((b) => b.type === "text");
-    const rawText = textBlock && "text" in textBlock ? textBlock.text : "";
-    if (!rawText) throw new Error("Claude returned empty content");
+    if (!rawText) throw new Error("Gemini returned empty content");
 
     let analysis: Analysis;
     try {

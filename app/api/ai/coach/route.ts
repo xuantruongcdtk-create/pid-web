@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { streamText } from "ai";
 import { createClient } from "@/lib/supabase/server";
-import { AI_NOT_CONFIGURED_MESSAGE, hasAnthropicKey } from "@/lib/ai/mock";
+import { AI_NOT_CONFIGURED_MESSAGE, hasGeminiKey } from "@/lib/ai/mock";
+import { generateContentStream, GEMINI_FLASH_MODEL } from "@/lib/ai/gemini";
 import { getLimiter } from "@/lib/rate-limit";
 
-// Edge runtime — streams arrive faster, and the Vercel AI SDK is built for it.
+// Edge runtime — streams arrive faster.
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const COACH_MODEL = process.env.ANTHROPIC_COACH_MODEL || "claude-sonnet-4-5";
 const coachLimiter = getLimiter("ai:coach", "1 h", 20);
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -57,6 +55,18 @@ QUY TẮC TRẢ LỜI:
 
 SAU MỖI CÂU TRẢ LỜI, thêm DUY NHẤT dòng cuối cùng đúng format (sẽ được parse và ẩn khỏi UI):
 <!--SUGGESTIONS:["câu hỏi follow-up ngắn 1","câu hỏi follow-up ngắn 2"]-->`;
+}
+
+/**
+ * Gemini takes a single `prompt` string (or a multi-turn `Content[]`). We
+ * collapse the chat history into one prompt with role markers — this is the
+ * simplest shape that lets the system prompt + back-and-forth coexist.
+ */
+function buildPromptFromHistory(messages: ChatMessage[]): string {
+  return messages
+    .map((m) => `${m.role === "user" ? "Phụ huynh" : "AI Coach"}: ${m.content}`)
+    .join("\n\n")
+    .concat("\n\nAI Coach:");
 }
 
 // ---------------------------------------------------------------------------
@@ -162,26 +172,24 @@ export async function POST(request: Request) {
       }
     }
 
-    // --- MOCK STREAM when AI not configured
-    if (!hasAnthropicKey()) {
+    // --- MOCK STREAM when Gemini not configured
+    if (!hasGeminiKey()) {
       const mockReply =
         `${AI_NOT_CONFIGURED_MESSAGE}. Đây là câu trả lời mẫu của AI Coach cho: "${lastUser.slice(
           0,
           80,
         )}". ` +
-        "Khi bạn cấu hình ANTHROPIC_API_KEY hợp lệ, AI Coach sẽ phản hồi thực tế dựa trên dữ liệu học tập của con.\n" +
+        "Khi bạn cấu hình GOOGLE_AI_API_KEY hợp lệ, AI Coach sẽ phản hồi thực tế dựa trên dữ liệu học tập của con.\n" +
         '<!--SUGGESTIONS:["Cho ví dụ cụ thể với con tôi","Tôi nên ưu tiên môn nào tuần này?"]-->';
       return fakeStream(mockReply, { conversationId: convId, aiConfigured: false, supabase });
     }
 
-    // --- Real Claude streaming via Vercel AI SDK
-    const anthropicProvider = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
-    const result = await streamText({
-      model: anthropicProvider(COACH_MODEL),
-      maxOutputTokens: 1024,
+    // --- Real Gemini streaming (FLASH model — latency + free tier)
+    const stream = await generateContentStream(buildPromptFromHistory(messages), {
+      model: GEMINI_FLASH_MODEL,
       system: buildSystemPrompt(childContext),
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
-      onFinish: async ({ text }) => {
+      maxOutputTokens: 1024,
+      onComplete: async (text) => {
         if (convId) {
           try {
             await supabase
@@ -194,12 +202,14 @@ export async function POST(request: Request) {
       },
     });
 
-    // Stream plain text (not the Vercel AI Data Stream format) so the client
-    // can simply read body chunks.
-    const res = result.toTextStreamResponse();
-    if (convId) res.headers.set("X-Conversation-Id", convId);
-    res.headers.set("X-Ai-Configured", "true");
-    return res;
+    const headers = new Headers({
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Content-Type-Options": "nosniff",
+      "X-Ai-Configured": "true",
+    });
+    if (convId) headers.set("X-Conversation-Id", convId);
+    return new Response(stream, { headers });
   } catch (error: any) {
     console.error("/api/ai/coach error:", error);
     return NextResponse.json(

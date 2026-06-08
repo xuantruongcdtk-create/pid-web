@@ -1,24 +1,26 @@
 /**
- * Mock AI responses used when ANTHROPIC_API_KEY is not configured.
+ * Mock AI responses used when GOOGLE_AI_API_KEY is not configured.
  * Keeps the UI rendering smoothly in dev / preview environments without
  * requiring a real API key.
  *
  * Every helper returns a payload identical in shape to what the real
- * Claude-backed routes return, plus { aiConfigured: false }.
+ * Gemini-backed routes return, plus { aiConfigured: false }.
  */
 
-export const AI_NOT_CONFIGURED_MESSAGE = "AI chưa được cấu hình";
+export const AI_NOT_CONFIGURED_MESSAGE = "Gemini AI chưa được cấu hình";
 
-export function hasAnthropicKey(): boolean {
-  const key = process.env.ANTHROPIC_API_KEY?.trim();
+export function hasGeminiKey(): boolean {
+  const key = process.env.GOOGLE_AI_API_KEY?.trim();
   if (!key) return false;
   // Reject common placeholder values from .env.example
-  if (/^sk-ant-\.\.\.?$/.test(key)) return false;
-  if (key === "your_anthropic_key" || key === "changeme") return false;
-  // Real Anthropic keys are sk-ant-… and ≥ ~40 chars; anything shorter is bogus.
+  if (/^AIza\.\.\.?$/.test(key)) return false;
+  if (key === "your_google_ai_key" || key === "changeme") return false;
+  // Real Gemini API keys start with `AIza` and are ~39 chars long.
+  if (!key.startsWith("AIza")) return false;
   if (key.length < 30) return false;
   return true;
 }
+
 
 // ---- analyze --------------------------------------------------------------
 
@@ -43,7 +45,7 @@ export function mockAnalysis(childName = "Học sinh") {
       {
         type: "info" as const,
         title: "Đang dùng dữ liệu mẫu",
-        description: AI_NOT_CONFIGURED_MESSAGE + " — hãy thêm ANTHROPIC_API_KEY vào .env.local.",
+        description: AI_NOT_CONFIGURED_MESSAGE + " — hãy thêm GOOGLE_AI_API_KEY vào .env.local.",
       },
     ],
     dnaUpdate: {
@@ -62,7 +64,7 @@ export function mockCoachReply(lastUserMessage: string) {
     role: "assistant" as const,
     content:
       `${AI_NOT_CONFIGURED_MESSAGE}. Đây là câu trả lời mẫu cho: "${lastUserMessage}". ` +
-      "Khi bạn cấu hình ANTHROPIC_API_KEY, AI Coach sẽ trả lời thực tế dựa trên ngữ cảnh học tập của con.",
+      "Khi bạn cấu hình GOOGLE_AI_API_KEY, AI Coach sẽ trả lời thực tế dựa trên ngữ cảnh học tập của con.",
     timestamp: new Date().toISOString(),
   };
 }

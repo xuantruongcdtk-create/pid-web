@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { anthropic } from "@/lib/ai/anthropic";
+import { generateContent, GEMINI_PRO_MODEL } from "@/lib/ai/gemini";
 import { createClient } from "@/lib/supabase/server";
 import {
   AI_NOT_CONFIGURED_MESSAGE,
-  hasAnthropicKey,
+  hasGeminiKey,
   mockQuizGeneration,
 } from "@/lib/ai/mock";
 import { getLimiter } from "@/lib/rate-limit";
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
     }
 
     // --- Mock fallback when no AI key
-    if (!hasAnthropicKey()) {
+    if (!hasGeminiKey()) {
       const mock = mockQuizGeneration({ subject, grade, count, sourceSnippet: sourceText.slice(0, 200) });
       const finalTitle = title?.trim() || mock.title;
       let createdQuizId: string | null = null;
@@ -161,16 +161,14 @@ export async function POST(request: Request) {
       });
     }
 
-    // --- Real Claude call
+    // --- Real Gemini call (PRO model for GDPT 2018 quality)
     const userPrompt = buildQuizUserPrompt({ subject, grade, count, sourceText });
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 4000,
+    const rawText = await generateContent(userPrompt, {
+      model: GEMINI_PRO_MODEL,
       system: QUIZ_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
+      maxOutputTokens: 4000,
+      jsonMode: true,
     });
-    const textBlock = response.content.find((b) => b.type === "text");
-    const rawText = textBlock && "text" in textBlock ? textBlock.text : "";
     if (!rawText) {
       return NextResponse.json(
         { success: false, error: "empty_response" },

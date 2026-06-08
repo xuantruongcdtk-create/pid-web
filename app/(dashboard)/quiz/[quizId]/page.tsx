@@ -91,7 +91,7 @@ export default async function QuizTakePage({
           <CardContent className="p-10 text-center space-y-2">
             <h3 className="text-lg font-bold text-slate-100">Bộ đề chưa có câu hỏi</h3>
             <p className="text-sm text-slate-400">
-              Vui lòng vào trang chỉnh sửa để thêm câu hỏi cho đề "{quiz.title}".
+              Vui lòng vào trang chỉnh sửa để thêm câu hỏi cho đề &ldquo;{quiz.title}&rdquo;.
             </p>
           </CardContent>
         </Card>

@@ -97,8 +97,8 @@ export function PricingCard({
           {plan.highlight && (
             <div className="space-y-2 pt-2 border-t border-slate-900">
               <blockquote className="text-[11px] text-slate-400 italic leading-snug">
-                "Nhờ PID tôi phát hiện con yếu Đại số từ tuần 3, kịp can thiệp trước kỳ thi. Tuyệt
-                vời!" <br />
+                &ldquo;Nhờ PID tôi phát hiện con yếu Đại số từ tuần 3, kịp can thiệp trước kỳ thi.
+                Tuyệt vời!&rdquo; <br />
                 <span className="not-italic text-slate-500">
                   — Phụ huynh, Hà Nội <span className="text-amber-400">★★★★★</span>
                 </span>

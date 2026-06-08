@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,14 @@ import { PricingCard } from "@/components/payment/PricingCard";
 import { CreditPackCard } from "@/components/payment/CreditPackCard";
 import { PricingFAQ } from "@/components/payment/PricingFAQ";
 import { PaymentMethodSelector } from "@/components/payment/PaymentMethodSelector";
+import { AddChildModal } from "@/components/children/AddChildModal";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Pencil,
+  Trash2,
+  UserPlus,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SubscriptionTarget {
   kind: "plan" | "credits";
@@ -259,6 +267,9 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* ----- Children ----- */}
+      <ChildrenSection />
+
       {/* ----- FAQ ----- */}
       <PricingFAQ />
 
@@ -296,5 +307,159 @@ function Stat({
         {value}
       </div>
     </div>
+  );
+}
+
+interface ChildSettingsRow {
+  id: string;
+  full_name: string;
+  grade: string;
+  school_name: string | null;
+  school_level: string | null;
+  avatar_color: string | null;
+}
+
+function ChildrenSection() {
+  const supabase = useMemo(() => createClient(), []);
+  const qc = useQueryClient();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<ChildSettingsRow | null>(null);
+
+  const childrenQ = useQuery({
+    queryKey: ["children-list"],
+    queryFn: async (): Promise<ChildSettingsRow[]> => {
+      const { data } = await supabase
+        .from("children")
+        .select("id, full_name, grade, school_name, school_level, avatar_color")
+        .order("created_at", { ascending: true });
+      return (data ?? []) as ChildSettingsRow[];
+    },
+    staleTime: 30_000,
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/children/${id}`, { method: "DELETE" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success) {
+        throw new Error(json.message ?? json.error ?? "Lỗi khi xoá");
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["children-list"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-children"] });
+      toast.success("Đã xoá hồ sơ con");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Lỗi khi xoá"),
+  });
+
+  const children = childrenQ.data ?? [];
+
+  return (
+    <Card className="bg-slate-900/40 border-slate-900">
+      <CardHeader className="flex flex-row items-center justify-between gap-2">
+        <div>
+          <CardTitle className="text-slate-200 text-base">Hồ sơ học sinh</CardTitle>
+          <CardDescription className="text-slate-500">
+            Quản lý hồ sơ các con — thêm / sửa / xoá
+          </CardDescription>
+        </div>
+        <Button
+          size="sm"
+          onClick={() => {
+            setEditTarget(null);
+            setModalOpen(true);
+          }}
+          className="bg-indigo-600 hover:bg-indigo-500 text-white"
+        >
+          <UserPlus className="h-4 w-4 mr-1.5" /> Thêm con
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {childrenQ.isLoading ? (
+          <p className="text-xs text-slate-500">Đang tải…</p>
+        ) : children.length === 0 ? (
+          <div className="p-6 text-center rounded-xl border border-dashed border-slate-800 bg-slate-950/30">
+            <p className="text-sm text-slate-400">Bạn chưa có hồ sơ con nào.</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Bấm &ldquo;Thêm con&rdquo; ở trên để bắt đầu theo dõi học tập của con.
+            </p>
+          </div>
+        ) : (
+          children.map((c) => (
+            <div
+              key={c.id}
+              className="p-3 bg-slate-950/40 border border-slate-900 rounded-xl flex items-center justify-between gap-2"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <Avatar className="h-10 w-10 shrink-0">
+                  <AvatarFallback
+                    style={{ backgroundColor: c.avatar_color ?? "#0f2554" }}
+                    className="text-white"
+                  >
+                    {c.full_name.slice(0, 1).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <h5 className="font-semibold text-slate-100 text-sm truncate">{c.full_name}</h5>
+                  <div className="flex gap-2 mt-0.5">
+                    <Badge
+                      variant="outline"
+                      className="text-slate-400 border-slate-800 text-[10px]"
+                    >
+                      Lớp {c.grade}
+                    </Badge>
+                    {c.school_name && (
+                      <span className="text-[10px] text-slate-500 truncate">
+                        {c.school_name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-1 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setEditTarget(c);
+                    setModalOpen(true);
+                  }}
+                  className="text-slate-400 hover:text-indigo-400 hover:bg-slate-900"
+                  aria-label="Chỉnh sửa"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={deleteMut.isPending}
+                  onClick={() => {
+                    if (confirm(`Xoá hồ sơ "${c.full_name}"? Toàn bộ điểm số sẽ bị xoá theo.`)) {
+                      deleteMut.mutate(c.id);
+                    }
+                  }}
+                  className={cn(
+                    "text-slate-400 hover:text-rose-400 hover:bg-rose-950/20",
+                  )}
+                  aria-label="Xoá"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </CardContent>
+
+      <AddChildModal
+        open={modalOpen}
+        onOpenChange={(o) => {
+          setModalOpen(o);
+          if (!o) setEditTarget(null);
+        }}
+        initial={editTarget ?? undefined}
+      />
+    </Card>
   );
 }

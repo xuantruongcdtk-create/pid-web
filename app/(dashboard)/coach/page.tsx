@@ -276,7 +276,7 @@ export default function AiCoachPage() {
         </div>
 
         <ChildSwitcher
-          children={children}
+          list={children}
           active={activeChild}
           onSelect={(id) => setSelectedChild(id)}
         />
@@ -285,7 +285,7 @@ export default function AiCoachPage() {
       {aiConfiguredNotice === false && (
         <div className="px-4 py-2 bg-amber-950/40 border-b border-amber-900/60 text-amber-300 text-xs flex items-center gap-2">
           <AlertTriangle className="h-3.5 w-3.5" />
-          Đang dùng dữ liệu mẫu — chưa cấu hình ANTHROPIC_API_KEY hợp lệ.
+          Đang dùng dữ liệu mẫu — chưa cấu hình GOOGLE_AI_API_KEY hợp lệ.
         </div>
       )}
 
@@ -431,15 +431,15 @@ function MessageBubble({
 }
 
 function ChildSwitcher({
-  children,
+  list,
   active,
   onSelect,
 }: {
-  children: ChildRow[];
+  list: ChildRow[];
   active: ChildRow | null;
   onSelect: (id: string) => void;
 }) {
-  if (children.length === 0) {
+  if (list.length === 0) {
     return (
       <Badge className="bg-amber-950 border-amber-900 text-amber-400 text-[10px]">
         Chưa có hồ sơ con
@@ -475,7 +475,7 @@ function ChildSwitcher({
           Tư vấn cho
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-slate-800" />
-        {children.map((c) => (
+        {list.map((c) => (
           <DropdownMenuItem
             key={c.id}
             onClick={() => onSelect(c.id)}

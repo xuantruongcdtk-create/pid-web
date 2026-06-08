@@ -33,7 +33,9 @@ export function TeacherShell({
   const isActive = (href: string) =>
     href === "/teacher" ? pathname === href : pathname.startsWith(href);
 
-  const SidebarContent = () => (
+  // Plain JSX-returning helper (not a React component) to avoid creating a
+  // new component identity on every render.
+  const renderSidebar = () => (
     <div className="flex flex-col h-full bg-slate-950 text-slate-200 border-r border-slate-900 w-64">
       <div className="flex items-center gap-3 px-6 h-20 border-b border-slate-900">
         <div className="p-2 bg-gradient-to-tr from-emerald-600 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/20">
@@ -102,7 +104,7 @@ export function TeacherShell({
   return (
     <div className="min-h-screen flex bg-slate-950">
       <aside className="hidden md:flex flex-col sticky top-0 h-screen">
-        <SidebarContent />
+        {renderSidebar()}
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -121,7 +123,7 @@ export function TeacherShell({
                 }
               />
               <SheetContent side="left" className="p-0 border-r-0 w-64 bg-slate-950">
-                <SidebarContent />
+                {renderSidebar()}
               </SheetContent>
             </Sheet>
 
