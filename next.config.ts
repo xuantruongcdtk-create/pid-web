@@ -1,4 +1,3 @@
-import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -12,9 +11,11 @@ const nextConfig: NextConfig = {
     ],
   },
   // Pin Turbopack's workspace root to this project so it stops looking for a
-  // parent lockfile when builds run from outside the folder.
+  // parent lockfile when builds run from outside the folder. We use
+  // `process.cwd()` instead of `__dirname` because next.config.ts is compiled
+  // as ESM on Vercel, where __dirname is undefined.
   turbopack: {
-    root: path.resolve(__dirname),
+    root: process.cwd(),
   },
 };
 
