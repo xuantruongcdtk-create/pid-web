@@ -1,5 +1,8 @@
 "use client";
 
+// Opt out of static prerender — see note in dashboard layout.
+export const dynamic = "force-dynamic";
+
 import React from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

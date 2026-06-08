@@ -1,5 +1,9 @@
 "use client";
 
+// Opt out of static prerender — calls Supabase client.createClient() at render
+// time which throws if env vars aren't set at build time.
+export const dynamic = "force-dynamic";
+
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

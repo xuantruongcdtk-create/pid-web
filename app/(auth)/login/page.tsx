@@ -1,5 +1,9 @@
 "use client";
 
+// Opt out of static prerender — calls Supabase client.createClient() at render
+// time which throws if env vars aren't set at build time.
+export const dynamic = "force-dynamic";
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
