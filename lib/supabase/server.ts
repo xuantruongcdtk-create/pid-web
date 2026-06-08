@@ -5,12 +5,16 @@ import { cookies } from "next/headers";
 const PLACEHOLDER_SUPABASE_URL = "https://placeholder.supabase.co";
 const PLACEHOLDER_ANON_KEY = "placeholder-anon-key";
 
+function cleanEnv(s: string | undefined): string {
+  return (s ?? "").trim();
+}
+
 function validUrl(s: string | undefined): string {
-  if (!s || s.trim() === "") return PLACEHOLDER_SUPABASE_URL;
+  const v = cleanEnv(s);
+  if (!v) return PLACEHOLDER_SUPABASE_URL;
   try {
-    // eslint-disable-next-line no-new
-    new URL(s);
-    return s;
+    new URL(v);
+    return v;
   } catch {
     return PLACEHOLDER_SUPABASE_URL;
   }
@@ -19,7 +23,7 @@ function validUrl(s: string | undefined): string {
 export const createClient = () => {
   return createServerClient(
     validUrl(process.env.NEXT_PUBLIC_SUPABASE_URL),
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || PLACEHOLDER_ANON_KEY,
+    cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || PLACEHOLDER_ANON_KEY,
     {
       cookies: {
         async getAll() {

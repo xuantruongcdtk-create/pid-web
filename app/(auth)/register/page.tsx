@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Globe, Lock, Loader2, Mail, Sparkles, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyAuthError } from "@/lib/auth-errors";
 
 export default function RegisterPage() {
   return (
@@ -81,10 +82,7 @@ function RegisterForm() {
           emailRedirectTo: `${window.location.origin}/callback?next=${encodeURIComponent(nextPath)}`,
         },
       });
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
+      if (error) throw error;
       // If session is returned immediately (email confirmation disabled in dev),
       // persist the referral to profiles right away.
       if (data.session && data.user && refTeacherId) {
@@ -95,14 +93,15 @@ function RegisterForm() {
       }
       if (data.session) {
         toast.success("Đăng ký thành công!");
-        router.replace(nextPath);
+        // New users go through onboarding before landing on the dashboard.
+        router.replace("/onboarding");
         router.refresh();
       } else {
         toast.success("Đã gửi email xác thực. Hãy kiểm tra hộp thư của bạn.");
         router.replace("/login");
       }
-    } catch (err: any) {
-      toast.error(err?.message ?? "Lỗi khi đăng ký");
+    } catch (err) {
+      toast.error(friendlyAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -110,15 +109,16 @@ function RegisterForm() {
 
   async function handleGoogle() {
     try {
-      await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/callback?next=${encodeURIComponent(nextPath)}`,
           queryParams: refTeacherId ? { ref: refTeacherId } : undefined,
         },
       });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Lỗi đăng nhập Google");
+      if (error) throw error;
+    } catch (e) {
+      toast.error(friendlyAuthError(e));
     }
   }
 
